@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:assignment_flutter/form.dart';
+import 'package:assignment_flutter/widgets/left_drawer.dart';
 
 class ShopItem {
   final String name;
@@ -11,7 +13,7 @@ class MyHomePage extends StatelessWidget {
   MyHomePage({Key? key}) : super(key: key);
 
   final List<ShopItem> items = [
-    ShopItem("View Your InventLaris", Icons.checklist),
+    ShopItem("View Products", Icons.checklist),
     ShopItem("Add Product", Icons.add_shopping_cart),
     ShopItem("Logout", Icons.logout),
   ];
@@ -36,9 +38,10 @@ class MyHomePage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'InventLaris App',
+          'InventLaris',
         ),
       ),
+      drawer: const LeftDrawer(),
       body: SingleChildScrollView(
         // Scrolling wrapper widget
         child: Padding(
@@ -80,7 +83,6 @@ class MyHomePage extends StatelessWidget {
   }
 }
 
-
 class ShopCard extends StatelessWidget {
   final ShopItem item;
 
@@ -93,11 +95,17 @@ class ShopCard extends StatelessWidget {
       child: InkWell(
         // Responsive touch area
         onTap: () {
-          // Show a SnackBar when clicked
+          // Show SnackBar when clicked
           ScaffoldMessenger.of(context)
             ..hideCurrentSnackBar()
             ..showSnackBar(SnackBar(
                 content: Text("You pressed the ${item.name} button!")));
+
+          // Navigate to the appropriate route (depending on the button type)
+          if (item.name == "Add Product") {
+            Navigator.push(context,
+                MaterialPageRoute(builder: (context) => ShopFormPage()));
+          }
         },
         child: Container(
           // Container to hold Icon and Text
@@ -125,4 +133,3 @@ class ShopCard extends StatelessWidget {
     );
   }
 }
-
