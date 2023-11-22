@@ -504,3 +504,324 @@ class MyApp extends StatelessWidget {
   }
 }
 ```
+
+## Assignment 9
+1.  Can we retrieve JSON data without creating a model first? If yes, is it better than creating a model before retrieving JSON data?
+Yes, we can. However it is generally bettter practice to consider creating a model before retrieving. This is because model can ensure that the JSON data is parsed correctly and guarantee the data types costraint. 
+
+2. Explain the function of CookieRequest and explain why a CookieRequest instance needs to be shared with all components in a Flutter application.
+
+CookiesRequest are used to maintain your login status when you move between different screens of a Django web application. To achieve this, cookies need to be shared between different components of the application.
+
+3.Explain the mechanism of fetching data from JSON until it can be displayed on Flutter.
+We use the http package to fetch the data and the dart: convert library to parse the JSON data. 
+
+4. Explain the authentication mechanism from entering account data on Flutter to Django authentication completion and the display of menus on Flutter.
+
+The pbp_django_auth library is used to send a login request to the server. Once the login is successful, cookies are obtained and stored. These cookies are then used to authorize the user and display the appropriate menu.
+
+5.  List all the widgets you used in this assignment and explain their respective functions.
+
+FutureBuilder: handle asynchronous data retrieval.
+
+ListView: displays a list of items, typically in a scrolling view.
+
+GestureDetector: detects and responds to user gestures, such as taps and swipes.
+
+TextFormField: allows the user to enter text.
+
+ElevatedButton: A raised button that provides visual feedback when tapped.
+
+Container: provides a basic layout container for other widgets.
+
+6. Explain how you implement the checklist above step by step! (not just following the tutorial).
+
+a. Implement the login page
+```dart
+import 'package:assignment_flutter/screen/menu.dart';
+import 'package:flutter/material.dart';
+import 'package:pbp_django_auth/pbp_django_auth.dart';
+import 'package:provider/provider.dart';
+
+void main() {
+    runApp(const LoginApp());
+}
+
+class LoginApp extends StatelessWidget {
+const LoginApp({super.key});
+
+@override
+Widget build(BuildContext context) {
+    return MaterialApp(
+        title: 'Login',
+        theme: ThemeData(
+            primarySwatch: Colors.blue,
+    ),
+    home: const LoginPage(),
+    );
+    }
+}
+
+class LoginPage extends StatefulWidget {
+    const LoginPage({super.key});
+
+    @override
+    _LoginPageState createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+    final TextEditingController _usernameController = TextEditingController();
+    final TextEditingController _passwordController = TextEditingController();
+
+    @override
+    Widget build(BuildContext context) {
+        final request = context.watch<CookieRequest>();
+        return Scaffold(
+            appBar: AppBar(
+                title: const Text('Login'),
+            ),
+            body: Container(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                        TextField(
+                            controller: _usernameController,
+                            decoration: const InputDecoration(
+                                labelText: 'Username',
+                            ),
+                        ),
+                        const SizedBox(height: 12.0),
+                        TextField(
+                            controller: _passwordController,
+                            decoration: const InputDecoration(
+                                labelText: 'Password',
+                            ),
+                            obscureText: true,
+                        ),
+                        const SizedBox(height: 24.0),
+                        ElevatedButton(
+                            onPressed: () async {
+                                String username = _usernameController.text;
+                                String password = _passwordController.text;
+
+                                // Check credentials
+                                // TODO: Change the URL and don't forget to add a trailing slash (/) at the end of the URL!
+                                // To connect the Android emulator to Django on localhost,
+                                // use the URL http://10.0.2.2/
+                                final response = await request.login("http://<YOUR_APP_URL>/auth/login/", {
+                                'username': username,
+                                'password': password,
+                                });
+
+                                if (request.loggedIn) {
+                                    String message = response['message'];
+                                    String uname = response['username'];
+                                    Navigator.pushReplacement(
+                                        context,
+                                        MaterialPageRoute(builder: (context) => MyHomePage()),
+                                    );
+                                    ScaffoldMessenger.of(context)
+                                        ..hideCurrentSnackBar()
+                                        ..showSnackBar(
+                                            SnackBar(content: Text("$message Welcome, $uname.")));
+                                    } else {
+                                    showDialog(
+                                        context: context,
+                                        builder: (context) => AlertDialog(
+                                            title: const Text('Login Failed'),
+                                            content:
+                                                Text(response['message']),
+                                            actions: [
+                                                TextButton(
+                                                    child: const Text('OK'),
+                                                    onPressed: () {
+                                                        Navigator.pop(context);
+                                                    },
+                                                ),
+                                            ],
+                                        ),
+                                    );
+                                }
+                            },
+                            child: const Text('Login'),
+                        ),
+                    ],
+                ),
+            ),
+        );
+    }
+}
+```
+
+b. create a data model: extract the data from the django project and convert it to the dart 'form'
+
+```dart
+// To parse this JSON data, do
+//
+//     final product = productFromJson(jsonString);
+
+import 'dart:convert';
+
+List<Product> productFromJson(String str) => List<Product>.from(json.decode(str).map((x) => Product.fromJson(x)));
+
+String productToJson(List<Product> data) => json.encode(List<dynamic>.from(data.map((x) => x.toJson())));
+
+class Product {
+    String model;
+    int pk;
+    Fields fields;
+
+    Product({
+        required this.model,
+        required this.pk,
+        required this.fields,
+    });
+
+    factory Product.fromJson(Map<String, dynamic> json) => Product(
+        model: json["model"],
+        pk: json["pk"],
+        fields: Fields.fromJson(json["fields"]),
+    );
+
+    Map<String, dynamic> toJson() => {
+        "model": model,
+        "pk": pk,
+        "fields": fields.toJson(),
+    };
+}
+
+class Fields {
+    int user;
+    String name;
+    int amount;
+    String description;
+    int price;
+    DateTime dateAdded;
+
+    Fields({
+        required this.user,
+        required this.name,
+        required this.amount,
+        required this.description,
+        required this.price,
+        required this.dateAdded,
+    });
+
+    factory Fields.fromJson(Map<String, dynamic> json) => Fields(
+        user: json["user"],
+        name: json["name"],
+        amount: json["amount"],
+        description: json["description"],
+        price: json["price"],
+        dateAdded: DateTime.parse(json["date_added"]),
+    );
+
+    Map<String, dynamic> toJson() => {
+        "user": user,
+        "name": name,
+        "amount": amount,
+        "description": description,
+        "price": price,
+        "date_added": "${dateAdded.year.toString().padLeft(4, '0')}-${dateAdded.month.toString().padLeft(2, '0')}-${dateAdded.day.toString().padLeft(2, '0')}",
+    };
+}
+
+```
+
+c. implement the list_product.dart
+```dart
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:assignment_flutter/models/product.dart';
+import 'package:assignment_flutter/widgets/left_drawer.dart';
+
+class ProductPage extends StatefulWidget {
+    const ProductPage({Key? key}) : super(key: key);
+
+    @override
+    _ProductPageState createState() => _ProductPageState();
+}
+
+class _ProductPageState extends State<ProductPage> {
+Future<List<Product>> fetchProduct() async {
+    // TODO: Change the URL to your Django app's URL. Don't forget to add the trailing slash (/) if needed.
+    var url = Uri.parse(
+        'http://http://127.0.0.1:8000//json/');
+    var response = await http.get(
+        url,
+        headers: {"Content-Type": "application/json"},
+    );
+
+    // decode the response to JSON
+    var data = jsonDecode(utf8.decode(response.bodyBytes));
+
+    // convert the JSON to Product object
+    List<Product> list_product = [];
+    for (var d in data) {
+        if (d != null) {
+            list_product.add(Product.fromJson(d));
+        }
+    }
+    return list_product;
+}
+
+@override
+Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(
+        title: const Text('Product'),
+        ),
+        drawer: const LeftDrawer(),
+        body: FutureBuilder(
+            future: fetchProduct(),
+            builder: (context, AsyncSnapshot snapshot) {
+                if (snapshot.data == null) {
+                    return const Center(child: CircularProgressIndicator());
+                } else {
+                    if (!snapshot.hasData) {
+                    return const Column(
+                        children: [
+                        Text(
+                            "No product data available.",
+                            style:
+                                TextStyle(color: Color(0xff59A5D8), fontSize: 20),
+                        ),
+                        SizedBox(height: 8),
+                        ],
+                    );
+                } else {
+                    return ListView.builder(
+                        itemCount: snapshot.data!.length,
+                        itemBuilder: (_, index) => Container(
+                                margin: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 12),
+                                padding: const EdgeInsets.all(20.0),
+                                child: Column(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                    Text(
+                                    "${snapshot.data![index].fields.name}",
+                                    style: const TextStyle(
+                                        fontSize: 18.0,
+                                        fontWeight: FontWeight.bold,
+                                    ),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Text("${snapshot.data![index].fields.price}"),
+                                    const SizedBox(height: 10),
+                                    Text(
+                                        "${snapshot.data![index].fields.description}")
+                                ],
+                                ),
+                            ));
+                    }
+                }
+            }));
+    }
+}
+```
+d. integrate the flutter form with django
+e. implement the logout feature
