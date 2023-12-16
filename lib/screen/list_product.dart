@@ -15,7 +15,7 @@ class _ProductPageState extends State<ProductPage> {
 Future<List<Product>> fetchProduct() async {
     // TODO: Change the URL to your Django app's URL. Don't forget to add the trailing slash (/) if needed.
     var url = Uri.parse(
-        'http://http://127.0.0.1:8000//json/');
+        'http://127.0.0.1:8000/json/');
     var response = await http.get(
         url,
         headers: {"Content-Type": "application/json"},
@@ -53,7 +53,7 @@ Widget build(BuildContext context) {
                         Text(
                             "No product data available.",
                             style:
-                                TextStyle(color: Color(0xff59A5D8), fontSize: 20),
+                                TextStyle(color: Colors.teal, fontSize: 20),
                         ),
                         SizedBox(height: 8),
                         ],

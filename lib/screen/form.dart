@@ -68,32 +68,6 @@ class _ShopFormPageState extends State<ShopFormPage> {
                 padding: const EdgeInsets.all(8.0),
                 child: TextFormField(
                   decoration: InputDecoration(
-                    hintText: "Amount",
-                    labelText: "Amount",
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(5.0),
-                    ),
-                  ),
-                  onChanged: (String? value) {
-                    setState(() {
-                      _amount = int.tryParse(value ?? "0") ?? 0;
-                    });
-                  },
-                  validator: (String? value) {
-                    if (value == null || value.isEmpty) {
-                      return "Amount cannot be empty!";
-                    }
-                    if (int.tryParse(value) == null) {
-                      return "Amount must be a number!";
-                    }
-                    return null;
-                  },
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: TextFormField(
-                  decoration: InputDecoration(
                     hintText: "Description",
                     labelText: "Description",
                     border: OutlineInputBorder(
@@ -139,7 +113,7 @@ class _ShopFormPageState extends State<ShopFormPage> {
                   },
                 ),
               ),
-                            Padding(
+              Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: TextFormField(
                   decoration: InputDecoration(
@@ -166,46 +140,44 @@ class _ShopFormPageState extends State<ShopFormPage> {
                 ),
               ),
 
-
               Align(
                 alignment: Alignment.bottomCenter,
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: ElevatedButton(
                     style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.all(Colors.teal),
+                      backgroundColor: MaterialStateProperty.all(Colors.indigo),
                     ),
-                    onPressed: () async {
+                    onPressed: () {
                       if (_formKey.currentState!.validate()) {
-                        // Send request to Django and wait for the response
-                        // TODO: Change the URL to your Django app's URL. Don't forget to add the trailing slash (/) if needed.
-                        final response = await request.postJson(
-                            "http://127.0.0.1:8000/create-flutter/",
-                            jsonEncode(<String, String>{
-                              'name': _name,
-                              'price': _price.toString(),
-                              'description': _description,
-                              'amount' : _amount.toString(), 
-                              // TODO: Adjust the fields with your Django model
-                            }));
-                        if (response['status'] == 'success') {
-                          ScaffoldMessenger.of(context)
-                              .showSnackBar(const SnackBar(
-                            content:
-                                Text("New product has saved successfully!"),
-                          ));
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => MyHomePage()),
-                          );
-                        } else {
-                          ScaffoldMessenger.of(context)
-                              .showSnackBar(const SnackBar(
-                            content:
-                                Text("Something went wrong, please try again."),
-                          ));
-                        }
+                        showDialog(
+                          context: context,
+                          builder: (context) {
+                            return AlertDialog(
+                              title: const Text('Product successfully saved'),
+                              content: SingleChildScrollView(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('Name: $_name'),
+                                    Text('Amount: $_amount'), 
+                                    Text('Price: $_price'),
+                                    Text('Description: $_description')
+                                  ],
+                                ),
+                              ),
+                              actions: [
+                                TextButton(
+                                  child: const Text('OK'),
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                        _formKey.currentState!.reset();
                       }
                     },
                     child: Text(
